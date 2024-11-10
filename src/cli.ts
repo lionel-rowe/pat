@@ -1,4 +1,4 @@
-import './polyfills.ts'
+import { regExpEscape, Temporal } from './ponyfills.ts'
 import bcd from '@mdn/browser-compat-data' with { type: 'json' }
 import { Command } from '@cliffy/command'
 import { type Border, border as defaultBorder, Table } from '@cliffy/table'
@@ -17,7 +17,7 @@ function firstOrOnly<T>(arr: T | T[] | undefined | null, defaultVal: T): T {
 	return arr ?? defaultVal
 }
 
-const r: typeof String.raw = (s, ...vals) => String.raw(s, ...vals.map(RegExp.escape))
+const r: typeof String.raw = (s, ...vals) => String.raw(s, ...vals.map(regExpEscape))
 
 // https://github.com/c4spar/deno-cliffy/issues/765
 function table(header: string[], body: string[][], border: Border = defaultBorder) {
