@@ -1,4 +1,4 @@
-import 'temporal-polyfill'
+import 'temporal-polyfill/global'
 import '@li/regexp-escape-polyfill/global'
 import { regExpEscape } from '@li/regexp-escape-polyfill'
 

@@ -1,14 +1,17 @@
+import './polyfills.ts'
 import bcd from '@mdn/browser-compat-data' with { type: 'json' }
 import type { CompatStatement } from '@mdn/browser-compat-data'
-// @deno-types="https://raw.githubusercontent.com/krisk/Fuse/43eebfaa35917217848958e0ccc811ca07026737/src/index.d.ts"
-import Fuse, { type FuseResult } from 'fuse.js'
+import FuseDefault from 'fuse.js'
+import type { Fuse as FuseType, FuseResult } from 'fuse.js'
 import { Command } from '@cliffy/command'
 import { type Border, border as defaultBorder, Table } from '@cliffy/table'
 import { Select } from '@cliffy/prompt'
 import { brightBlack, rgb24 } from '@std/fmt/colors'
 import { hyperlink } from './fmt.ts'
-import './polyfills.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
+
+// https://github.com/krisk/Fuse/issues/784
+const Fuse = FuseDefault as unknown as typeof FuseType
 
 function flattenKeys(obj: object, bottomProps: string[], acc: string[] = []): { key: string[]; value: unknown }[] {
 	return Object.entries(obj).flatMap(([key, value]) => {
@@ -65,7 +68,7 @@ const RECENT = 0xbb_bb_33
 // red
 const UNSUPPORTED = 0xee_22_22
 
-export const cli = new Command()
+const cli = new Command()
 	.name('pat')
 	.description('Get compatibility data for JS and other web features. Powered by MDN.')
 	.example(
@@ -148,11 +151,7 @@ async function handler(_options: void, ...keywords: string[]) {
 					brightBlack(x.item.key.join('.'))
 				}`
 
-				return {
-					name,
-					value: i,
-					disabled: i === resultIdx,
-				}
+				return { name, value: i }
 			}),
 			maxRows,
 		})
@@ -184,10 +183,6 @@ function formatVersionInfo(v: string, release_date: string) {
 	const versionInfoFormatted = `${rgb24(v.padEnd(10, ' '), rgb)} ${brightBlack(ago)}`
 
 	return versionInfoFormatted
-}
-
-if (import.meta.main) {
-	await cli.parse()
 }
 
 function toRgb(rgb: number) {
@@ -236,4 +231,8 @@ function getBrowserInfo(browserId: string, version: string) {
 		name: browser.name,
 		versionInfo: browser.releases[version] ?? null,
 	}
+}
+
+if (import.meta.main) {
+	await cli.parse()
 }
