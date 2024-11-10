@@ -1,39 +1,12 @@
 import './polyfills.ts'
 import bcd from '@mdn/browser-compat-data' with { type: 'json' }
-import type { CompatStatement } from '@mdn/browser-compat-data'
-import FuseDefault from 'fuse.js'
-import type { Fuse as FuseType, FuseResult } from 'fuse.js'
 import { Command } from '@cliffy/command'
 import { type Border, border as defaultBorder, Table } from '@cliffy/table'
 import { Select } from '@cliffy/prompt'
 import { brightBlack, rgb24 } from '@std/fmt/colors'
 import { hyperlink } from './fmt.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
-
-// https://github.com/krisk/Fuse/issues/784
-const Fuse = FuseDefault as unknown as typeof FuseType
-
-function flattenKeys(obj: object, bottomProps: string[], acc: string[] = []): { key: string[]; value: unknown }[] {
-	return Object.entries(obj).flatMap(([key, value]) => {
-		if (value != null && typeof value === 'object' && !bottomProps.includes(key)) {
-			return flattenKeys(value as Record<string, unknown>, bottomProps, [...acc, key])
-		}
-		return [{ key: acc, value }]
-	})
-}
-
-const bottomProps = ['__compat']
-const excludeFromKeys = ['javascript', 'api', 'builtins', 'grammar']
-
-const bcdSearchable = flattenKeys(bcd, bottomProps).map(({ key, value }) => ({
-	key,
-	keywords: key.filter((k) => !excludeFromKeys.includes(k)).join(' ').replaceAll(/[^\p{L}\p{M}\p{N}]+/gu, ' ').trim(),
-	data: value as CompatStatement,
-}))
-
-const fuse = new Fuse(bcdSearchable, {
-	keys: ['keywords', 'value.tags'],
-})
+import { fuse, type Result } from './search.ts'
 
 const excludeFromSupportInfo = ['ie', 'oculus']
 
@@ -77,13 +50,6 @@ const cli = new Command()
 	)
 	.arguments('<keyword:string> [...keywords:string]')
 	.action(handler)
-
-type Result = FuseResult<{
-	key: string[]
-	keywords: string
-	data: CompatStatement
-}>
-
 function getResultTable(result: Result) {
 	const { item } = result
 	const { key, data } = item
