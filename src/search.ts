@@ -1,10 +1,6 @@
 import bcd from '@mdn/browser-compat-data' with { type: 'json' }
 import type { CompatStatement } from '@mdn/browser-compat-data'
-import FuseDefault from 'fuse.js'
-import type { Fuse as FuseType, FuseResult } from 'fuse.js'
-
-// https://github.com/krisk/Fuse/issues/784
-const Fuse = FuseDefault as unknown as typeof FuseType
+import Fuse, { type FuseResult } from 'fuse.js'
 
 function flattenKeys(obj: object, bottomProps: string[], acc: string[] = []): { key: string[]; value: unknown }[] {
 	return Object.entries(obj).flatMap(([key, value]) => {
