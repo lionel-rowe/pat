@@ -6,7 +6,7 @@ import { Select } from '@cliffy/prompt'
 import { brightBlack, rgb24 } from '@std/fmt/colors'
 import { hyperlink } from './fmt.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
-import { fuse, type Result } from './search.ts'
+import { bcdSearchable, fuse, type Result } from './search.ts'
 
 const excludeFromSupportInfo = ['ie', 'oculus']
 
@@ -48,21 +48,27 @@ const cli = new Command()
 		'usage',
 		`pat set union ${brightBlack('# get results for keywords "set union", e.g. `Set.prototype.union`')}`,
 	)
-	.arguments('<keyword:string> [...keywords:string]')
+	.option('-a, --all', 'Include info for all browsers, including IE and Quest')
+	.option('-i, --interactive', 'Run in interactive mode')
+	.arguments('[...keywords:string]')
 	.action(handler)
-function getResultTable(result: Result) {
-	const { item } = result
-	const { key, data } = item
+
+function getResultTable(result: Result | null, options: Options) {
+	if (!result) {
+		return 'No results found'
+	}
+
+	const { key, data } = result
 
 	const prelude = [
 		'',
-		data.mdn_url ? `${item.keywords} [${hyperlink('MDN', data.mdn_url)}]` : item.keywords,
+		data.mdn_url ? `${result.keywords} [${hyperlink('MDN', data.mdn_url)}]` : result.keywords,
 		brightBlack(key.join('.')),
 		'',
 	].join('\n')
 
 	const supportInfo = Object.entries(data.support).map(([k, v]) => {
-		if (excludeFromSupportInfo.includes(k)) return null
+		if (!options.all && excludeFromSupportInfo.includes(k)) return null
 		return [k, Array.isArray(v) ? v[0] : v] as const
 	}).filter((x) => x != null)
 		.map(([k, v]) => {
@@ -89,19 +95,24 @@ function getResultTable(result: Result) {
 	)
 }
 
-async function handler(_options: void, ...keywords: string[]) {
-	const results = fuse.search(keywords.join(' '))
+type Options = {
+	all?: boolean
+	interactive?: boolean
+}
 
-	if (!results.length) {
-		console.error('No results found.')
-		return
+async function handler(options: Options, ...keywords: string[]) {
+	if (!keywords.length) {
+		options.interactive = true
 	}
 
+	let resultIdx = keywords.length ? fuse.search(keywords.join(' '))[0]?.refIndex ?? '...' : '...'
+
 	let table = ''
-	let resultIdx = 0
 
 	function drawTable() {
-		table = getResultTable(results[resultIdx])
+		const result = bcdSearchable[resultIdx as number]
+
+		table = getResultTable(result, options)
 		console.info(table)
 	}
 
@@ -109,14 +120,17 @@ async function handler(_options: void, ...keywords: string[]) {
 
 	const maxRows = 5
 
+	if (!options.interactive) {
+		return
+	}
+
 	while (true) {
 		resultIdx = await Select.prompt({
-			message: 'View a different result',
-			options: results.slice(0, 100).map((x, i) => {
-				const name = `${i + 1}. ${i === resultIdx ? brightBlack('[current] ') : ''}${x.item.keywords} ${
-					brightBlack(x.item.key.join('.'))
-				}`
-
+			message: 'Search for a feature',
+			default: resultIdx,
+			search: true,
+			options: bcdSearchable.map((x, i) => {
+				const name = `${x.keywords}`
 				return { name, value: i }
 			}),
 			maxRows,
@@ -124,7 +138,7 @@ async function handler(_options: void, ...keywords: string[]) {
 
 		const linesToErase = [...table.matchAll(/\n/g)].length + maxRows - 2
 		console.info(eraseLines(linesToErase))
-		console.info(cursorUp(2))
+		console.info(cursorUp(3))
 
 		drawTable()
 	}
