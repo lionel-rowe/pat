@@ -8,7 +8,7 @@ import { hyperlink } from './fmt.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
 import { bcdSearchable, fuse, type Result } from './search.ts'
 
-const excludeFromSupportInfo = ['ie', 'oculus']
+const excludedBrowsers = ['ie', 'oculus']
 
 function firstOrOnly<T>(arr: T | T[] | undefined | null, defaultVal: T): T {
 	if (Array.isArray(arr)) {
@@ -46,10 +46,22 @@ const cli = new Command()
 	.description('Get compatibility data for JS and other web features. Powered by MDN.')
 	.example(
 		'usage',
-		`pat set union ${brightBlack('# get results for keywords "set union", e.g. `Set.prototype.union`')}`,
+		`${
+			brightBlack(
+				'# get results for keywords "regex unicode sets", e.g. `javascript.builtins.RegExp.unicodeSets`',
+			)
+		}\npat regex unicode sets`,
 	)
-	.option('-a, --all', 'Include info for all browsers, including IE and Quest')
-	.option('-i, --interactive', 'Run in interactive mode')
+	.option(
+		'-a, --all',
+		`Include info for all browsers, including ${
+			new Intl.ListFormat('en-US').format(excludedBrowsers.map((x) => getBrowserInfo(x, '-1')?.name))
+		}.`,
+	)
+	.option(
+		'-i, --interactive',
+		'Run in interactive mode. If no keywords are supplied, the program will automatically run in this mode.',
+	)
 	.arguments('[...keywords:string]')
 	.action(handler)
 
@@ -68,7 +80,7 @@ function getResultTable(result: Result | null, options: Options) {
 	].join('\n')
 
 	const supportInfo = Object.entries(data.support).map(([k, v]) => {
-		if (!options.all && excludeFromSupportInfo.includes(k)) return null
+		if (!options.all && excludedBrowsers.includes(k)) return null
 		return [k, Array.isArray(v) ? v[0] : v] as const
 	}).filter((x) => x != null)
 		.map(([k, v]) => {
