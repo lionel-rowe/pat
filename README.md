@@ -18,3 +18,10 @@ deno install --global jsr:@li/pat
 # get results for keywords "regex unicode sets", e.g. `javascript.builtins.RegExp.unicodeSets`
 pat regex unicode sets
 ```
+
+### Updating the browser compat data
+
+```sh
+# update the npm:@mdn/browser-compat-data dependency locally
+pat update
+```

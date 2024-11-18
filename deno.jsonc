@@ -1,7 +1,7 @@
 {
 	"lock": false,
 	"name": "@li/pat",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"exports": {
 		".": "./src/cli.ts"
 	},
@@ -17,9 +17,10 @@
 		"@cliffy/prompt": "jsr:@cliffy/prompt@1.0.0-rc.7",
 		"@cliffy/table": "jsr:@cliffy/table@1.0.0-rc.7",
 		"@li/regexp-escape-polyfill": "jsr:@li/regexp-escape-polyfill@^0.3.4",
-		"@mdn/browser-compat-data": "npm:@mdn/browser-compat-data@^5.6.13",
+		"@mdn/browser-compat-data": "npm:@mdn/browser-compat-data@^5.6.15",
 		"@std/assert": "jsr:@std/assert@^1.0.7",
 		"@std/fmt": "jsr:@std/fmt@^1.0.3",
+		"@std/path": "jsr:@std/path@^1.0.8",
 		"fuse.js": "npm:fuse.js@7.0.0",
 		"temporal-polyfill": "npm:temporal-polyfill@0.2.5"
 	},
@@ -30,7 +31,7 @@
 		"indentWidth": 4,
 		"singleQuote": true,
 		"proseWrap": "preserve",
-		"exclude": ["README.md", "vendor"]
+		"exclude": ["README.md", "vendor", "data"]
 	},
 	"compilerOptions": { "strict": true },
 	"lint": {

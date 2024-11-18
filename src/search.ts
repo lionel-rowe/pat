@@ -1,6 +1,6 @@
 import bcd from '@mdn/browser-compat-data' with { type: 'json' }
 import type { CompatStatement } from '@mdn/browser-compat-data'
-import Fuse, { type FuseResult } from 'fuse.js'
+import Fuse from 'fuse.js'
 
 function flattenKeys(obj: object, bottomProps: string[], acc: string[] = []): { key: string[]; value: unknown }[] {
 	return Object.entries(obj).flatMap(([key, value]) => {

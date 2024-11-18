@@ -7,6 +7,7 @@ import { brightBlack, rgb24 } from '@std/fmt/colors'
 import { hyperlink } from './fmt.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
 import { bcdSearchable, fuse, type Result } from './search.ts'
+import { dirname, fromFileUrl } from '@std/path'
 
 const excludedBrowsers = ['ie', 'oculus']
 
@@ -64,6 +65,18 @@ const cli = new Command()
 	)
 	.arguments('[...keywords:string]')
 	.action(handler)
+
+cli
+	.command('update')
+	.description('Update the browser compat data.')
+	.action(update)
+
+async function update() {
+	await new Deno.Command('deno', {
+		args: ['add', 'npm:@mdn/browser-compat-data'],
+		cwd: dirname(fromFileUrl(import.meta.url)),
+	}).spawn().output()
+}
 
 function getResultTable(result: Result | null, options: Options) {
 	if (!result) {
