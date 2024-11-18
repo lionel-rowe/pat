@@ -1,5 +1,5 @@
 import { regExpEscape, Temporal } from './ponyfills.ts'
-import bcd from '@mdn/browser-compat-data' with { type: 'json' }
+import type { CompatData } from '@mdn/browser-compat-data'
 import { Command } from '@cliffy/command'
 import { type Border, border as defaultBorder, Table } from '@cliffy/table'
 import { Select } from '@cliffy/prompt'
@@ -7,7 +7,12 @@ import { brightBlack, rgb24 } from '@std/fmt/colors'
 import { hyperlink } from './fmt.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
 import { bcdSearchable, fuse, type Result } from './search.ts'
-import { dirname, fromFileUrl } from '@std/path'
+import { type BrowserSkeletons, browserSkeletons } from './browsers.ts'
+import { get, set } from '@kitsonk/kv-toolbox/blob'
+
+const KV_PREFIX = 'mdn/browser-compat-data'
+const KV_LATEST_VERSION_TAG_KEY = [KV_PREFIX, 'latestVersionTag'] as const
+const KV_DATA_KEY = [KV_PREFIX, 'data'] as const
 
 const excludedBrowsers = ['ie', 'oculus']
 
@@ -56,7 +61,9 @@ const cli = new Command()
 	.option(
 		'-a, --all',
 		`Include info for all browsers, including ${
-			new Intl.ListFormat('en-US').format(excludedBrowsers.map((x) => getBrowserInfo(x, '-1')?.name))
+			new Intl.ListFormat('en-US').format(excludedBrowsers.map((x) =>
+				getBrowserInfo(browserSkeletons, x, '-1')?.name
+			))
 		}.`,
 	)
 	.option(
@@ -72,13 +79,11 @@ cli
 	.action(update)
 
 async function update() {
-	await new Deno.Command('deno', {
-		args: ['add', 'npm:@mdn/browser-compat-data'],
-		cwd: dirname(fromFileUrl(import.meta.url)),
-	}).spawn().output()
+	const { updated, latestVersionTag } = await updateBcdInfo()
+	console.info(updated ? `Updated browser compat data to version ${latestVersionTag}` : 'Already up to date')
 }
 
-function getResultTable(result: Result | null, options: Options) {
+function getResultTable(bcd: CompatData, result: Result | null, options: Options) {
 	if (!result) {
 		return 'No results found'
 	}
@@ -108,7 +113,7 @@ function getResultTable(result: Result | null, options: Options) {
 				? rgb24('[unknown]', RECENT)
 				: version_added || rgb24('[none]', UNSUPPORTED)
 
-			const { name: browserName, versionInfo } = getBrowserInfo(x.browser, v)
+			const { name: browserName, versionInfo } = getBrowserInfo(bcd.browsers, x.browser, v)
 
 			const versionInfoFormatted = versionInfo?.release_date ? formatVersionInfo(v, versionInfo.release_date!) : v
 
@@ -125,6 +130,41 @@ type Options = {
 	interactive?: boolean
 }
 
+async function getBcdInfo() {
+	using kv = await Deno.openKv()
+	const latestVersionTag = (await kv.get(KV_LATEST_VERSION_TAG_KEY)).value as string | null
+	const _bcd = (await get(kv, KV_DATA_KEY)).value
+	const bcd = _bcd ? JSON.parse(new TextDecoder().decode(_bcd)) as CompatData : null
+
+	if (bcd == null || latestVersionTag == null) {
+		return null
+	}
+
+	return { latestVersionTag, bcd }
+}
+
+async function updateBcdInfo() {
+	using kv = await Deno.openKv()
+
+	const current = await getBcdInfo()
+
+	const latestVersionTag = (await fetch('https://github.com/mdn/browser-compat-data/releases/latest', {
+		method: 'HEAD',
+	})).url.split('/').at(-1)!
+
+	if (current?.latestVersionTag === latestVersionTag) {
+		return { updated: false, ...current }
+	}
+
+	const downloadUrl = `https://github.com/mdn/browser-compat-data/releases/download/${latestVersionTag}/data.json`
+	const bcd = await (await fetch(downloadUrl)).json() as CompatData
+
+	await kv.set(KV_LATEST_VERSION_TAG_KEY, latestVersionTag)
+	await set(kv, KV_DATA_KEY, new Blob([JSON.stringify(bcd)]))
+
+	return { updated: true, bcd, latestVersionTag }
+}
+
 async function handler(options: Options, ...keywords: string[]) {
 	if (!keywords.length) {
 		options.interactive = true
@@ -134,10 +174,16 @@ async function handler(options: Options, ...keywords: string[]) {
 
 	let table = ''
 
+	let { bcd, latestVersionTag } = await getBcdInfo() ?? {}
+
+	if (bcd == null || latestVersionTag == null) {
+		;({ bcd, latestVersionTag } = await updateBcdInfo())
+	}
+
 	function drawTable() {
 		const result = bcdSearchable[resultIdx as number]
 
-		table = getResultTable(result, options)
+		table = getResultTable(bcd!, result, options)
 		console.info(table)
 	}
 
@@ -227,14 +273,14 @@ function getAgo(dateStr: string) {
 	return { ago, rgb }
 }
 
-function getBrowserInfo(browserId: string, version: string) {
-	const browser = bcd.browsers[browserId as keyof typeof bcd.browsers]
+function getBrowserInfo(browsers: BrowserSkeletons, browserId: string, version: string) {
+	const browser = browsers[browserId as keyof typeof browsers]
 
 	if (!browser) return { name: browserId, versionInfo: null }
 
 	return {
 		name: browser.name,
-		versionInfo: browser.releases[version] ?? null,
+		versionInfo: browser.releases?.[version] ?? null,
 	}
 }
 

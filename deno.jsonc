@@ -1,7 +1,7 @@
 {
 	"lock": false,
 	"name": "@li/pat",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"exports": {
 		".": "./src/cli.ts"
 	},
@@ -16,7 +16,9 @@
 		"@cliffy/keypress": "jsr:@cliffy/keypress@1.0.0-rc.7",
 		"@cliffy/prompt": "jsr:@cliffy/prompt@1.0.0-rc.7",
 		"@cliffy/table": "jsr:@cliffy/table@1.0.0-rc.7",
+		"@kitsonk/kv-toolbox": "jsr:@kitsonk/kv-toolbox@^0.22.0",
 		"@li/regexp-escape-polyfill": "jsr:@li/regexp-escape-polyfill@^0.3.4",
+		// just for types, actual data is downloaded dynamically and stored in KV
 		"@mdn/browser-compat-data": "npm:@mdn/browser-compat-data@^5.6.15",
 		"@std/assert": "jsr:@std/assert@^1.0.7",
 		"@std/fmt": "jsr:@std/fmt@^1.0.3",

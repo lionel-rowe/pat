@@ -9,7 +9,7 @@ View compatibility data for JS and other web feature from the comfort of your te
 Requires [Deno](https://deno.com/).
 
 ```sh
-deno install --global jsr:@li/pat
+deno install --global --allow-net --unstable-kv jsr:@li/pat
 ```
 
 ## Usage
