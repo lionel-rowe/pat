@@ -181,7 +181,7 @@ async function handler(options: Options, ...keywords: string[]) {
 	}
 
 	function drawTable() {
-		const result = bcdSearchable[resultIdx as number]
+		const result = bcdSearchable[resultIdx as number] ?? null
 
 		table = getResultTable(bcd!, result, options)
 		console.info(table)

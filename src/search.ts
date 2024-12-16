@@ -17,7 +17,7 @@ function flattenKeys(obj: object, bottomProps: string[], acc: string[] = []): { 
 }
 
 const bottomProps = ['__compat']
-const excludeFromKeys = ['javascript', 'api', 'builtins', 'grammar']
+const excludeFromKeys = ['javascript', 'api', 'builtins', 'grammar', 'css', 'properties']
 
 export const bcdSearchable = flattenKeys(bcd, bottomProps).map(({ key, value }) => ({
 	key,
