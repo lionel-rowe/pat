@@ -1,12 +1,12 @@
 {
 	"lock": false,
 	"name": "@li/pat",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"exports": {
 		".": "./src/cli.ts"
 	},
 	"tasks": {
-		"test": "deno test"
+		"test": "deno test --unstable-kv"
 	},
 	"imports": {
 		"@cliffy/ansi": "jsr:@cliffy/ansi@1.0.0-rc.7",

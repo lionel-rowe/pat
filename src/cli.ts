@@ -6,7 +6,7 @@ import { Select } from '@cliffy/prompt'
 import { brightBlack, rgb24 } from '@std/fmt/colors'
 import { hyperlink } from './fmt.ts'
 import { cursorUp, eraseLines } from '@cliffy/ansi/ansi-escapes'
-import { bcdSearchable, fuse, type Result } from './search.ts'
+import { getSearchable, type Result } from './search.ts'
 import { type BrowserSkeletons, browserSkeletons } from './browsers.ts'
 import { get, set } from '@kitsonk/kv-toolbox/blob'
 
@@ -130,7 +130,12 @@ type Options = {
 	interactive?: boolean
 }
 
-async function getBcdInfo() {
+export async function getBcdInfo(): Promise<
+	{
+		latestVersionTag: string
+		bcd: CompatData
+	} | null
+> {
 	using kv = await Deno.openKv()
 	const latestVersionTag = (await kv.get(KV_LATEST_VERSION_TAG_KEY)).value as string | null
 	const _bcd = (await get(kv, KV_DATA_KEY)).value
@@ -170,8 +175,6 @@ async function handler(options: Options, ...keywords: string[]) {
 		options.interactive = true
 	}
 
-	let resultIdx = keywords.length ? fuse.search(keywords.join(' '))[0]?.refIndex ?? '...' : '...'
-
 	let table = ''
 
 	let { bcd, latestVersionTag } = await getBcdInfo() ?? {}
@@ -179,6 +182,10 @@ async function handler(options: Options, ...keywords: string[]) {
 	if (bcd == null || latestVersionTag == null) {
 		;({ bcd, latestVersionTag } = await updateBcdInfo())
 	}
+
+	const { bcdSearchable, fuse } = getSearchable(bcd)
+
+	let resultIdx = keywords.length ? fuse.search(keywords.join(' '))[0]?.refIndex ?? '...' : '...'
 
 	function drawTable() {
 		const result = bcdSearchable[resultIdx as number] ?? null

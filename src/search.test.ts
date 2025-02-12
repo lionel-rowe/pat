@@ -1,7 +1,9 @@
 import { assertEquals } from '@std/assert'
-import { fuse } from './search.ts'
+import { getSearchable } from './search.ts'
+import bcd from '@mdn/browser-compat-data' with { type: 'json' }
 
-Deno.test(fuse.search.name, () => {
+Deno.test('fuse.search', () => {
+	const { fuse } = getSearchable(bcd)
 	const results = fuse.search('regex unicode sets')
 
 	const { item } = results[0]
